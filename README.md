@@ -225,7 +225,7 @@ The browser suite starts its own Angular/JSON Server instances on **4201/3001**,
 
 ```bash
 cd backend
-./mvnw test          # 21 Java unit/client/integration tests; PostgreSQL checks skipped by default
+./mvnw test          # 23 Java unit/client/integration tests; PostgreSQL checks skipped by default
 ./mvnw verify        # tests and executable JAR packaging
 ```
 

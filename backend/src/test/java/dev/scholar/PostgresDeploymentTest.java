@@ -54,6 +54,13 @@ class PostgresDeploymentTest {
         studentService.create(
             new StudentInput(
                 "Ada", "Lovelace", "ada@example.com", "Active", List.of(first.id(), second.id())));
+    assertThat(studentService.list())
+        .singleElement()
+        .satisfies(
+            saved -> {
+              assertThat(saved.id()).isEqualTo(student.id());
+              assertThat(saved.courseIds()).containsExactlyInAnyOrder(first.id(), second.id());
+            });
     studentService.update(
         student.id(),
         new StudentInput(

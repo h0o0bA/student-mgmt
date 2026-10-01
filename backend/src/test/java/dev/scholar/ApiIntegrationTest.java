@@ -8,7 +8,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManagerFactory;
 import java.util.*;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,6 +30,7 @@ class ApiIntegrationTest {
   @Autowired StudentService studentService;
   @Autowired CourseService courseService;
   @Autowired RestTemplate restTemplate;
+  @Autowired EntityManagerFactory entityManagerFactory;
   MockRestServiceServer upstream;
 
   @BeforeEach
@@ -43,6 +46,57 @@ class ApiIntegrationTest {
 
   StudentInput studentInput(List<String> ids) {
     return new StudentInput("Ada", "Lovelace", "ada@example.com", "Active", ids);
+  }
+
+  @Test
+  void studentListLoadsAllEnrollmentsInOneQuery() {
+    CourseView first = courseService.create(courseInput("CS101"));
+    CourseView second = courseService.create(courseInput("CS102"));
+    for (int i = 0; i < 8; i++) {
+      studentService.create(
+          new StudentInput(
+              "Demo",
+              "Student",
+              "demo" + i + "@example.com",
+              "Active",
+              i == 0 ? List.of() : List.of(first.id(), second.id())));
+    }
+    var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+    statistics.setStatisticsEnabled(true);
+    statistics.clear();
+    try {
+      List<StudentView> result = studentService.list();
+      assertThat(result).hasSize(8);
+      assertThat(result).extracting(StudentView::id).doesNotHaveDuplicates();
+      assertThat(
+              result.stream()
+                  .filter(s -> s.email().equals("demo0@example.com"))
+                  .findFirst()
+                  .orElseThrow()
+                  .courseIds())
+          .isEmpty();
+      assertThat(result.stream().filter(s -> !s.email().equals("demo0@example.com")))
+          .allSatisfy(
+              s -> assertThat(s.courseIds()).containsExactlyInAnyOrder(first.id(), second.id()));
+      assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+    } finally {
+      statistics.setStatisticsEnabled(false);
+    }
+  }
+
+  @Test
+  void studentDetailsLoadEnrollmentsInOneQuery() {
+    CourseView course = courseService.create(courseInput("CS101"));
+    StudentView student = studentService.create(studentInput(List.of(course.id())));
+    var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+    statistics.setStatisticsEnabled(true);
+    statistics.clear();
+    try {
+      assertThat(studentService.get(student.id()).courseIds()).containsExactly(course.id());
+      assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+    } finally {
+      statistics.setStatisticsEnabled(false);
+    }
   }
 
   @Test
