@@ -77,6 +77,7 @@ jobs:
         run: >-
           docker run -d --name student-mgmt-api --network host --read-only
           --tmpfs /tmp:rw,nosuid,size=128m
+          -e JDK_JAVA_OPTIONS="-Xshare:on -Xlog:cds=info"
           -e PORT=18080
           -e DATABASE_JDBC_URL=jdbc:postgresql://127.0.0.1:5432/student_mgmt_test
           -e DATABASE_USERNAME=scholar
@@ -84,6 +85,8 @@ jobs:
           student-mgmt-api
       - name: Exercise CRUD and validation
         run: node scripts/check-deployment.cjs write
+      - name: Verify the application class cache is loaded
+        run: docker logs student-mgmt-api 2>&1 | grep -F 'Mapped dynamic region'
       - name: Verify persistence after a fresh container start
         run: |
           docker restart student-mgmt-api

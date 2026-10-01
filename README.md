@@ -121,6 +121,10 @@ Use a **JDBC** URL, not a `postgres://` or `postgresql://` connection string. Ke
 
 Flyway creates the PostgreSQL schema on first startup and tracks migrations; Hibernate validates the schema instead of modifying it. The connection pool is limited to three connections per function instance. Cloud seeding is disabled, so a new deployment starts with an empty catalog and student list. This avoids multiple instances trying to seed the same database. Local mock/H2 sample data remains unchanged.
 
+The container reduces Java startup work with Spring Boot's [extracted JAR layout and Class Data Sharing](https://docs.spring.io/spring-boot/3.5/reference/packaging/class-data-sharing.html). The image build trains a class cache against an isolated in-memory database, without credentials or access to the hosted database. Training and runtime use the same Java image and application paths; the cache is regenerated with every application build. Runtime still uses PostgreSQL, Flyway migrations, schema validation, and normal Spring transactions.
+
+`-XX:TieredStopAtLevel=1` also favors startup speed for this small CRUD app, at the cost of peak performance for sustained CPU-heavy workloads. In three local Java 21 runs with a 512 MB heap and an already-running PostgreSQL database, median time from process launch through the first successful student and course responses fell from 1.85 seconds to 0.85 seconds. These are local measurements, not a Vercel latency guarantee: container provisioning and Neon wake-up can still delay the first request after inactivity. The default localhost JSON Server setup is unaffected.
+
 The RestTemplate import remains available. In the cloud, set `CATALOG_API_URL` to a reachable JSON Server endpoint that returns the existing course JSON format. If it is unset, only `/api/courses/import` returns a clear 503 configuration message; regular CRUD is fully available. The local import still uses JSON Server at port 3000. JSON Server is **not** used as cloud file storage because Vercel instances cannot persist `db.json` reliably.
 
 ### Check the container locally (optional)
