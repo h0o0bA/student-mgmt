@@ -21,6 +21,12 @@ public class CatalogClient {
   }
 
   public List<CourseView> fetchCourses() {
+    if (url == null || url.isBlank()) {
+      throw new ApiException(
+          HttpStatus.SERVICE_UNAVAILABLE,
+          "The course catalog import is not configured. Set CATALOG_API_URL to a JSON Server"
+              + " catalog endpoint.");
+    }
     try {
       CourseView[] courses = restTemplate.getForObject(url, CourseView[].class);
       if (courses == null)
@@ -30,7 +36,7 @@ public class CatalogClient {
     } catch (RestClientException error) {
       throw new ApiException(
           HttpStatus.BAD_GATEWAY,
-          "Cannot reach the course catalog. Start JSON Server and try again.");
+          "Cannot reach the course catalog. Check the JSON Server catalog URL and try again.");
     }
   }
 }

@@ -44,6 +44,7 @@ Thumbs.db
 
 # Local toolchains and runtime data
 .tools/
+.vercel/
 backend/target/
 backend/data/
 mock/db.json

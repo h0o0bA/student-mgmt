@@ -49,6 +49,15 @@ class CatalogClientTest {
   }
 
   @Test
+  void reportsUnconfiguredDeploymentCatalogWithoutMakingAnHttpRequest() {
+    CatalogClient unconfigured = new CatalogClient(new RestTemplate(), "");
+    assertThatThrownBy(unconfigured::fetchCourses)
+        .isInstanceOfSatisfying(
+            ApiException.class, error -> assertThat(error.status.value()).isEqualTo(503))
+        .hasMessageContaining("CATALOG_API_URL");
+  }
+
+  @Test
   void rejectsMalformedUpstreamJson() {
     server
         .expect(requestTo("http://catalog.test/api/courses"))

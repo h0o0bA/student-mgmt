@@ -39,3 +39,55 @@ jobs:
           java-version: 21
           cache: maven
       - run: ./mvnw --batch-mode verify
+  deployment:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: student_mgmt_test
+          POSTGRES_USER: scholar
+          POSTGRES_PASSWORD: ci-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U scholar -d student_mgmt_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test the PostgreSQL deployment profile
+        working-directory: backend
+        run: ./mvnw --batch-mode -Dtest=PostgresDeploymentTest test
+        env:
+          TEST_POSTGRES: 'true'
+          DATABASE_JDBC_URL: jdbc:postgresql://127.0.0.1:5432/student_mgmt_test
+          DATABASE_USERNAME: scholar
+          DATABASE_PASSWORD: ci-test-password
+      - name: Build the Vercel backend container
+        run: docker build -f backend/Dockerfile.vercel -t student-mgmt-api backend
+      - name: Start the container with a read-only filesystem
+        run: >-
+          docker run -d --name student-mgmt-api --network host --read-only
+          --tmpfs /tmp:rw,nosuid,size=128m
+          -e PORT=18080
+          -e DATABASE_JDBC_URL=jdbc:postgresql://127.0.0.1:5432/student_mgmt_test
+          -e DATABASE_USERNAME=scholar
+          -e DATABASE_PASSWORD=ci-test-password
+          student-mgmt-api
+      - name: Exercise CRUD and validation
+        run: node scripts/check-deployment.cjs write
+      - name: Verify persistence after a fresh container start
+        run: |
+          docker restart student-mgmt-api
+          node scripts/check-deployment.cjs verify
+      - name: Container logs
+        if: always()
+        run: docker logs student-mgmt-api || true

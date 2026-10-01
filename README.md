@@ -2,6 +2,8 @@
 
 An Angular 20 application for managing students, courses, and enrollments. The default setup runs against JSON Server; an optional Java 21 / Spring Boot backend implements the same API with database validation and transactions.
 
+Vercel deployment is an additional mode. **The assignment submission still runs locally with Angular + JSON Server using `npm start`.** No Java or hosted database is required for the default workflow.
+
 ![Student Management overview](docs/overview.png)
 
 ## Run locally with JSON Server
@@ -86,6 +88,83 @@ curl -X POST http://127.0.0.1:8080/api/courses/import
 
 This imports the JSON Server course catalog into Spring’s database. It does not import students, delete absent courses, or synchronize continuously. To change the upstream URL, set `APP_CATALOG_URL` before starting Spring. Reload the UI after imports made outside the browser.
 
+## Optional Vercel deployment
+
+The checked-in `vercel.json` defines two services under one domain:
+
+| Service | Implementation                                   | Requests                      |
+| ------- | ------------------------------------------------ | ----------------------------- |
+| `web`   | Angular production build, served as static files | Pages, JavaScript, CSS, fonts |
+| `api`   | Java 21 / Spring Boot container                  | `/api` and `/api/*`           |
+
+The frontend continues to call the same relative `/api` URLs. Vercel routes them to Spring and preserves the full request path. Frontend routes fall back to `index.html`, so opening or refreshing `/students`, `/courses`, and edit URLs works. Local Angular proxy files are used only by `ng serve`.
+
+This configuration uses Vercel **Services and Container Images, currently beta**. See the [Services documentation](https://vercel.com/docs/services) and [Container Images documentation](https://vercel.com/docs/functions/container-images). Preparation and local tests do not deploy the app or create a Vercel project.
+
+### Settings to provide before deployment
+
+1. Create a dedicated hosted **PostgreSQL** database. The Vercel profile requires PostgreSQL; it never falls back to H2 or local JSON files. Use a separate database for preview deployments to keep preview edits out of production data.
+2. Import this repository into Vercel with the **repository root** as the Root Directory. The per-service build settings are already in `vercel.json`; use Node.js 22 for the Angular build. The backend Dockerfile supplies Java and Maven.
+3. Add the following server-side environment variables in Vercel for each environment you intend to deploy. An example is in `backend/.env.example`.
+
+| Variable            | Value                                                        |
+| ------------------- | ------------------------------------------------------------ |
+| `PORT`              | `8080` — Vercel must forward container requests to this port |
+| `DATABASE_JDBC_URL` | `jdbc:postgresql://HOST:5432/DATABASE?sslmode=require`       |
+| `DATABASE_USERNAME` | The database username                                        |
+| `DATABASE_PASSWORD` | The database password                                        |
+| `CATALOG_API_URL`   | Optional HTTPS URL of a reachable JSON Server course catalog |
+
+Use a **JDBC** URL, not a `postgres://` or `postgresql://` connection string. Keep credentials in Vercel environment settings. Do not put them in frontend code, `vercel.json`, or Git. Spring's `vercel` profile is selected automatically by the container.
+
+4. When ready, deploy from Vercel. Afterward, `/api/health` should report `Spring Boot`. Create a course, create a student with that course, refresh the page, and verify the saved enrollment.
+
+Flyway creates the PostgreSQL schema on first startup and tracks migrations; Hibernate validates the schema instead of modifying it. The connection pool is limited to three connections per function instance. Cloud seeding is disabled, so a new deployment starts with an empty catalog and student list. This avoids multiple instances trying to seed the same database. Local mock/H2 sample data remains unchanged.
+
+The RestTemplate import remains available. In the cloud, set `CATALOG_API_URL` to a reachable JSON Server endpoint that returns the existing course JSON format. If it is unset, only `/api/courses/import` returns a clear 503 configuration message; regular CRUD is fully available. The local import still uses JSON Server at port 3000. JSON Server is **not** used as cloud file storage because Vercel instances cannot persist `db.json` reliably.
+
+### Check the container locally (optional)
+
+Requires Docker and a dedicated PostgreSQL test database. Copy `backend/.env.example` to the ignored `backend/.env`, fill in its values, then run from the repository root:
+
+```bash
+docker build -f backend/Dockerfile.vercel -t student-mgmt-api backend
+docker run --name student-mgmt-api --read-only --tmpfs /tmp:rw,nosuid,size=128m \
+  --env-file backend/.env -p 18080:8080 student-mgmt-api
+```
+
+Use a database host reachable **from the container**; Docker Desktop uses `host.docker.internal` to reach a database on your computer. These commands start only a local container, not a Vercel deployment.
+
+In another terminal:
+
+```bash
+node scripts/check-deployment.cjs write
+docker restart student-mgmt-api
+node scripts/check-deployment.cjs verify
+```
+
+The smoke check creates temporary records, verifies that they survive a backend restart, checks validation and enrollment cleanup, and deletes its test records. It defaults to `http://127.0.0.1:18080`; override `SMOKE_BASE_URL` only for a dedicated test backend.
+
+## Assignment requirements
+
+| Requirement                                  | Where it is demonstrated                                                                      |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Angular 20+ and RxJS                         | Angular 20 standalone components, HttpClient, and the shared observable store                 |
+| CRUD for students and courses                | Student directory, course catalog, and their create/edit forms                                |
+| Multiple courses per student                 | Student profile's Course enrollments tab                                                      |
+| Routing                                      | Lazy-loaded pages, direct record URLs, and a 404 page                                         |
+| Multiple tabs and modal confirmation         | Profile/enrollment tabs, unsaved navigation guard, and delete dialogs                         |
+| Error handling                               | Validation errors, failed API calls, retry states, and preserved drafts                       |
+| Multi-component communication                | Shared RxJS store, component inputs/outputs, dialog and notice services                       |
+| Form handling                                | Reactive forms for profiles and courses                                                       |
+| JSON Server for CRUD on localhost            | **`npm start`** runs Angular at 4200 and JSON Server at 3000                                  |
+| Java, Spring, RestTemplate bonus             | `backend/`, local H2 mode, optional PostgreSQL deployment profile, and catalog import         |
+| Backend validation, exceptions, transactions | Validated DTOs, central exception handling, transactional service methods, and rollback tests |
+| Backend unit tests                           | JUnit/Mockito, RestTemplate client tests, H2 integration tests, and optional PostgreSQL tests |
+| GitHub and README                            | Repository source plus setup instructions for each mode                                       |
+
+Vercel hosting is supplementary. It does not replace the required localhost JSON Server demonstration.
+
 ## API
 
 Both backends expose this contract under `/api`:
@@ -146,13 +225,15 @@ The browser suite starts its own Angular/JSON Server instances on **4201/3001**,
 
 ```bash
 cd backend
-./mvnw test          # 18 Java unit/client/integration tests
+./mvnw test          # 19 Java unit/client/integration tests; PostgreSQL checks skipped by default
 ./mvnw verify        # tests and executable JAR packaging
 ```
 
 The same browser scenarios can be run against a manually started frontend using `E2E_BASE_URL=http://127.0.0.1:4202 npm run test:e2e`. Use a seeded development database; these tests create and remove temporary records and briefly edit a seed course.
 
 GitHub Actions runs the production build, Angular unit tests, JSON Server tests, browser tests, and backend verification on pushes and pull requests.
+
+The deployment CI job additionally runs three PostgreSQL tests, builds the actual backend container, starts it with a read-only filesystem, and checks persistence across a container restart. It runs test containers only; it never deploys to Vercel. To run the PostgreSQL checks locally, set `TEST_POSTGRES=true`, `DATABASE_JDBC_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD`, then run `./mvnw -Dtest=PostgresDeploymentTest test` from `backend`. **Use a dedicated test database: these tests delete application records.**
 
 ## Project layout
 
