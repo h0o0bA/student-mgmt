@@ -23,9 +23,11 @@ test('student and course CRUD, multiple enrollments, confirmation, and persisten
   await page.getByLabel('Last name').fill(`Student${suffix}`);
   await page.getByLabel('Email address').fill(`test${suffix}@example.com`);
   await page.getByRole('tab', { name: /Course enrollments/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
   await page.getByRole('checkbox', { name: /Quality Assurance II/ }).check();
   await page.getByRole('checkbox', { name: /Introduction to Computer Science/ }).check();
   await page.getByRole('tab', { name: /Profile details/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
   await expect(page.getByLabel('First name')).toHaveValue('Test');
   await page.getByRole('button', { name: 'Create student' }).click();
   await expect(page).toHaveURL(/\/students$/);
@@ -37,6 +39,7 @@ test('student and course CRUD, multiple enrollments, confirmation, and persisten
   await row.getByRole('link', { name: /Edit Test/ }).click();
   await page.getByLabel('First name').fill('Updated');
   await page.getByRole('tab', { name: /Course enrollments/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
   await page.getByRole('checkbox', { name: /Introduction to Computer Science/ }).uncheck();
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page).toHaveURL(/\/students$/);
@@ -135,12 +138,60 @@ test('student tabs work with keyboard and keep profile values', async ({ page })
   await page.getByLabel('First name').fill('Ada');
   await page.getByRole('tab', { name: /Profile details/ }).focus();
   await page.keyboard.press('ArrowRight');
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
   await expect(page.getByRole('tab', { name: /Course enrollments/ })).toHaveAttribute(
     'aria-selected',
     'true',
   );
   await page.keyboard.press('Home');
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
   await expect(page.getByLabel('First name')).toHaveValue('Ada');
+});
+
+test('tab confirmation supports Cancel and Escape and preserves both tab drafts', async ({
+  page,
+}) => {
+  let writes = 0;
+  page.on('request', (request) => {
+    if (request.url().includes('/api/') && ['POST', 'PUT', 'PATCH'].includes(request.method()))
+      writes++;
+  });
+  await page.goto('/students/new');
+  await page.getByLabel('First name').fill('Unsaved draft');
+  const profile = page.getByRole('tab', { name: /Profile details/ });
+  const enrollments = page.getByRole('tab', { name: /Course enrollments/ });
+  await enrollments.click();
+  await expect(page.getByRole('dialog')).toHaveAccessibleName('Switch tabs with unsaved changes?');
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+  await expect(profile).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByLabel('First name')).toHaveValue('Unsaved draft');
+  await enrollments.click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(profile).toHaveAttribute('aria-selected', 'true');
+  await enrollments.click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
+  await page.getByRole('checkbox', { name: /Introduction to Computer Science/ }).check();
+  await profile.click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
+  await expect(page.getByLabel('First name')).toHaveValue('Unsaved draft');
+  await enrollments.click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Switch tab', exact: true }).click();
+  await expect(
+    page.getByRole('checkbox', { name: /Introduction to Computer Science/ }),
+  ).toBeChecked();
+  expect(writes).toBe(0);
+});
+
+test('clean forms switch tabs without asking to confirm', async ({ page }) => {
+  await page.goto('/students/new');
+  await page.getByRole('tab', { name: /Course enrollments/ }).click();
+  await expect(page.getByRole('tab', { name: /Course enrollments/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('filters, empty states, and unknown routes', async ({ page }) => {

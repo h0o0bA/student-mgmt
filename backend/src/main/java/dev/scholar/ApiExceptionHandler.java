@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -52,6 +54,26 @@ public class ApiExceptionHandler {
   @ExceptionHandler(NoResourceFoundException.class)
   ResponseEntity<ApiError> missing() {
     return response(HttpStatus.NOT_FOUND, "Endpoint not found.", Map.of());
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  ResponseEntity<ApiError> unsupportedMethod(HttpRequestMethodNotSupportedException error) {
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+        .headers(error.getHeaders())
+        .body(
+            new ApiError(
+                405,
+                "This HTTP method is not supported for this endpoint.",
+                Map.of(),
+                Instant.now()));
+  }
+
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  ResponseEntity<ApiError> unsupportedMediaType() {
+    return response(
+        HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+        "Send a JSON request body with Content-Type application/json.",
+        Map.of());
   }
 
   @ExceptionHandler(Exception.class)

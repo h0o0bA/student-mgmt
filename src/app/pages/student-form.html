@@ -29,7 +29,8 @@
         [attr.aria-selected]="tab === 'profile'"
         [attr.tabindex]="tab === 'profile' ? 0 : -1"
         [class.selected]="tab === 'profile'"
-        (click)="tab = 'profile'"
+        [disabled]="saving"
+        (click)="selectTab('profile')"
       >
         01 <span>Profile details</span>
       </button>
@@ -41,7 +42,8 @@
         [attr.aria-selected]="tab === 'enrollments'"
         [attr.tabindex]="tab === 'enrollments' ? 0 : -1"
         [class.selected]="tab === 'enrollments'"
-        (click)="tab = 'enrollments'"
+        [disabled]="saving"
+        (click)="selectTab('enrollments')"
       >
         02 <span>Course enrollments</span
         ><span class="count">{{ form.controls.courseIds.value.length }}</span>

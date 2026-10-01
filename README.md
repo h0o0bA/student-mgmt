@@ -34,7 +34,7 @@ To start the processes separately, use `npm run api` and `npm run serve` in two 
 - **Course CRUD:** create, list, view, update, and delete courses; search by code, title, or instructor.
 - **Multiple enrollments:** add and remove courses on each student’s enrollment tab, with a credit total.
 - **Routing:** lazy-loaded overview, students, courses, edit/new pages, and a 404 page. Record URLs can be opened directly.
-- **Tabs and confirmation:** profile/enrollment tabs keep their draft values. Navigating to another page with unsaved changes opens a confirmation modal. Browser reload/close uses the browser’s native warning. Deletes also require confirmation; Cancel and Escape make no changes.
+- **Tabs and confirmation:** switching profile/enrollment tabs with unsaved edits opens a confirmation modal. Confirming switches tabs and keeps the draft; Cancel or Escape stays on the current tab. Clean forms switch immediately. Navigating to another page with unsaved changes opens a separate discard confirmation. Browser reload/close uses the browser’s native warning. Deletes also require confirmation.
 - **Reactive forms:** required fields, email validation, length limits, valid status, and whole-number credits from 1–6. Email addresses and course codes must be unique, ignoring case.
 - **Error handling:** loading and empty states, retry after API failures, preserved drafts after failed saves, and success notifications.
 - **Component communication:** an RxJS `BehaviorSubject` store updates lists and dashboard counts after successful writes. The enrollment picker uses input/output bindings; the stats component receives inputs; dialogs and notifications use shared services.
@@ -65,7 +65,7 @@ Open http://localhost:4200 again. The proxy now directs `/api` to port 8080. The
 
 - Spring Boot 3.5, Spring MVC REST controllers, Spring Data JPA, and a file-backed H2 database.
 - Bean Validation on request DTOs, case-insensitive uniqueness checks, database unique constraints, and enrollment foreign keys.
-- Central exception handling with consistent JSON responses and meaningful 400, 404, 409, and 502 statuses. Unexpected failures return a generic 500 message and are logged server-side.
+- Central exception handling with consistent JSON responses and meaningful 400, 404, 405, 409, 415, 502, and 503 statuses. Unexpected failures return a generic 500 message and are logged server-side.
 - `@Transactional` service methods for writes. Course deletion removes enrollment links and the course in one database transaction.
 - A **RestTemplate** catalog client with connect/read timeouts. The catalog import runs in a transaction, updates matching course codes without changing local IDs, and inserts new courses. If any upstream record is invalid or duplicated, the entire import rolls back.
 - JUnit 5 / Mockito unit tests, RestTemplate client tests using `MockRestServiceServer`, and Spring integration tests with H2 and MockMvc. The rollback test has no surrounding test transaction, so it checks the service’s real transaction boundary.
@@ -153,7 +153,7 @@ The smoke check creates temporary records, verifies that they survive a backend 
 | CRUD for students and courses                | Student directory, course catalog, and their create/edit forms                                |
 | Multiple courses per student                 | Student profile's Course enrollments tab                                                      |
 | Routing                                      | Lazy-loaded pages, direct record URLs, and a 404 page                                         |
-| Multiple tabs and modal confirmation         | Profile/enrollment tabs, unsaved navigation guard, and delete dialogs                         |
+| Multiple tabs and modal confirmation         | Profile/enrollment tab-switch confirmation, unsaved navigation guard, and delete dialogs      |
 | Error handling                               | Validation errors, failed API calls, retry states, and preserved drafts                       |
 | Multi-component communication                | Shared RxJS store, component inputs/outputs, dialog and notice services                       |
 | Form handling                                | Reactive forms for profiles and courses                                                       |
@@ -218,14 +218,14 @@ Course request:
 npm run build       # Angular production build and strict template checks
 npm test            # 10 Angular unit tests; requires Chrome
 npm run test:api     # 7 JSON Server tests; isolated in-memory databases
-npm run test:e2e     # 9 Playwright scenarios; local Chrome by default
+npm run test:e2e     # 11 Playwright scenarios; local Chrome by default
 ```
 
 The browser suite starts its own Angular/JSON Server instances on **4201/3001**, uses in-memory seed data, and does not touch `mock/db.json`. It covers complete student/course CRUD, multi-course enrollment, deletion cleanup, tab navigation, confirmations, validation, duplicate errors, failed saves, API recovery, direct routes, and mobile layout. If Chrome is elsewhere, configure `CHROME_BIN` for unit tests. In CI, Playwright uses its installed Chromium browser.
 
 ```bash
 cd backend
-./mvnw test          # 19 Java unit/client/integration tests; PostgreSQL checks skipped by default
+./mvnw test          # 21 Java unit/client/integration tests; PostgreSQL checks skipped by default
 ./mvnw verify        # tests and executable JAR packaging
 ```
 

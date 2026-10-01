@@ -8,6 +8,7 @@ import { Store } from '../core/store';
 import { NoticeService } from '../shared/notice';
 import { EnrollmentPicker } from '../shared/enrollment-picker';
 import { FieldError } from '../shared/field-error';
+import { ConfirmService } from '../shared/confirm-dialog';
 @Component({
   imports: [ReactiveFormsModule, AsyncPipe, RouterLink, EnrollmentPicker, FieldError],
   templateUrl: './student-form.html',
@@ -16,6 +17,7 @@ export class StudentForm {
   readonly store = inject(Store);
   private router = inject(Router);
   private notice = inject(NoticeService);
+  private confirm = inject(ConfirmService);
   private fb = inject(FormBuilder).nonNullable;
   readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? undefined;
   readonly form = this.fb.group({
@@ -59,10 +61,25 @@ export class StudentForm {
     this.form.controls.courseIds.setValue(ids);
     this.form.markAsDirty();
   }
+  async selectTab(next: 'profile' | 'enrollments') {
+    if (this.saving || next === this.tab) return;
+    if (
+      this.form.dirty &&
+      !(await this.confirm.ask({
+        title: 'Switch tabs with unsaved changes?',
+        message:
+          'Your draft will be kept while you switch tabs. Save the student when you are finished to apply your changes.',
+        action: 'Switch tab',
+      }))
+    )
+      return;
+    this.tab = next;
+    document.getElementById(`${next}-tab`)?.focus();
+  }
   tabKey(event: KeyboardEvent) {
     if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();
-      this.tab =
+      const next =
         event.key === 'Home'
           ? 'profile'
           : event.key === 'End'
@@ -70,7 +87,7 @@ export class StudentForm {
             : this.tab === 'profile'
               ? 'enrollments'
               : 'profile';
-      document.getElementById(`${this.tab}-tab`)?.focus();
+      void this.selectTab(next);
     }
   }
   save() {

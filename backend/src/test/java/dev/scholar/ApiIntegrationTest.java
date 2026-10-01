@@ -214,6 +214,21 @@ class ApiIntegrationTest {
   }
 
   @Test
+  void unsupportedMethodsReturn405InsteadOfAServerError() throws Exception {
+    mvc.perform(patch("/api/students"))
+        .andExpect(status().isMethodNotAllowed())
+        .andExpect(header().exists("Allow"))
+        .andExpect(jsonPath("$.status").value(405));
+  }
+
+  @Test
+  void unsupportedContentTypesReturn415InsteadOfAServerError() throws Exception {
+    mvc.perform(post("/api/students").contentType(MediaType.TEXT_PLAIN).content("invalid"))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(jsonPath("$.status").value(415));
+  }
+
+  @Test
   void missingResourcesReturn404AndHealthIsAvailable() throws Exception {
     mvc.perform(get("/api/students/missing")).andExpect(status().isNotFound());
     mvc.perform(delete("/api/courses/missing")).andExpect(status().isNotFound());
