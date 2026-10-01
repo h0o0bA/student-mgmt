@@ -44,7 +44,16 @@ Deleting a **student** keeps their courses. Deleting a **course** removes that c
 
 ## Bonus: Java / Spring backend
 
-Requirements: **JDK 21**. The checked-in Maven wrapper downloads Maven 3.9.11 on first use; a separate Maven installation is unnecessary.
+Requires **JDK 21**. The Maven wrapper installs Maven, **not Java**. Check with `java -version`.
+
+On macOS, if Java is missing, install [Temurin JDK 21](https://adoptium.net/temurin/releases/?version=21&os=mac) using the `.pkg` installer, then run:
+
+```bash
+export JAVA_HOME="$(/usr/libexec/java_home -v 21)"
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+From the repository root:
 
 ```bash
 cd backend
