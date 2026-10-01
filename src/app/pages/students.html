@@ -1,0 +1,134 @@
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">PEOPLE & POSSIBILITIES</span>
+    <h1>Students<span class="heading-dot">.</span></h1>
+    <p>A place for every student and their next chapter.</p>
+  </div>
+  <a class="button" routerLink="/students/new"><span>＋</span> Add student</a>
+</div>
+@if (store.state$ | async; as state) {
+  @if (state.loading) {
+    <div class="panel empty" role="status">Loading students…</div>
+  } @else if (state.error) {
+    <div class="error-banner" role="alert">
+      {{ state.error }} <button class="button secondary" (click)="store.load()">Try again</button>
+    </div>
+  } @else {
+    <app-stats [students]="state.students" [courses]="state.courses" />
+    @if (error) {
+      <div class="error-banner" role="alert">{{ error }}</div>
+    }
+    <section class="panel directory">
+      <div class="panel-heading">
+        <div>
+          <h2>
+            All students <span class="count">{{ state.students.length }}</span>
+          </h2>
+          <p>Manage profiles, courses, and everything in between.</p>
+        </div>
+      </div>
+      <div class="filters">
+        <label class="search"
+          ><span aria-hidden="true">⌕</span
+          ><input
+            aria-label="Search students"
+            type="search"
+            placeholder="Search by name or email…"
+            [(ngModel)]="query" /></label
+        ><select aria-label="Filter by status" [(ngModel)]="status">
+          <option>All statuses</option>
+          <option>Active</option>
+          <option>Inactive</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Status</th>
+              <th>Enrolled courses</th>
+              <th class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of filtered(state.students); track student.id) {
+              <tr>
+                <td>
+                  <a class="student-name" [routerLink]="['/students', student.id]"
+                    ><span class="avatar">{{ student.firstName[0] }}{{ student.lastName[0] }}</span>
+                    <div>
+                      <strong>{{ student.firstName }} {{ student.lastName }}</strong
+                      ><small>{{ student.email }}</small>
+                    </div></a
+                  >
+                </td>
+                <td>
+                  <span class="badge" [class.inactive]="student.status === 'Inactive'"
+                    ><span></span>{{ student.status }}</span
+                  >
+                </td>
+                <td>
+                  <div class="chips">
+                    @for (course of enrolled(student, state.courses); track course.id) {
+                      <span class="chip" [title]="course.title">{{ course.code }}</span>
+                    } @empty {
+                      <span class="muted">No courses yet</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <a
+                      class="icon-button"
+                      [routerLink]="['/students', student.id]"
+                      [attr.aria-label]="'Edit ' + student.firstName + ' ' + student.lastName"
+                      >Edit</a
+                    ><button
+                      class="icon-button danger-text"
+                      [disabled]="!!deleting"
+                      (click)="remove(student)"
+                      [attr.aria-label]="'Delete ' + student.firstName + ' ' + student.lastName"
+                    >
+                      {{ deleting === student.id ? 'Deleting…' : 'Delete' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">
+                  <div class="empty">
+                    <span class="empty-icon">♙</span>
+                    <h3>
+                      {{
+                        state.students.length
+                          ? 'No matching students'
+                          : 'Your next chapter starts here'
+                      }}
+                    </h3>
+                    <p>
+                      {{
+                        state.students.length
+                          ? 'Try another name, email, or status.'
+                          : 'Add your first student to get started.'
+                      }}
+                    </p>
+                    @if (!state.students.length) {
+                      <a class="button" routerLink="/students/new">Add student</a>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        Showing {{ filtered(state.students).length }} of {{ state.students.length }} students<span
+          >Every student counts.</span
+        >
+      </div>
+    </section>
+  }
+}

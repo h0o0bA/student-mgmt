@@ -1,0 +1,84 @@
+<a class="back-link" routerLink="/courses">← Back to courses</a>
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">COURSE CATALOG</span>
+    <h1>{{ id ? 'Course details' : 'Open a new door' }}<span class="heading-dot">.</span></h1>
+    <p>
+      {{
+        id
+          ? 'Keep this learning opportunity up to date.'
+          : 'Give curiosity a name, an instructor, and a place to grow.'
+      }}
+    </p>
+  </div>
+</div>
+@if (loading) {
+  <div class="panel empty" role="status">Loading course…</div>
+} @else if (loadError) {
+  <div class="error-banner" role="alert">
+    {{ loadError }} <a routerLink="/courses">Return to courses</a>
+  </div>
+} @else {
+  <form class="panel editor" [formGroup]="form" (ngSubmit)="save()">
+    <fieldset [disabled]="saving">
+      <div class="editor-body">
+        <div class="section-intro">
+          <h2>A little about this course.</h2>
+          <p>All fields are required except the description.</p>
+        </div>
+        @if (error) {
+          <div class="error-banner" role="alert">{{ error }}</div>
+        }
+        <div class="form-grid">
+          <label
+            >Course code<input
+              formControlName="code"
+              placeholder="e.g. CS101"
+              maxlength="20"
+            /><app-field-error [control]="form.controls.code" /><small class="field-hint"
+              >Letters, numbers, and hyphens. Must be unique.</small
+            ></label
+          ><label
+            >Credits<input
+              type="number"
+              min="1"
+              max="6"
+              step="1"
+              formControlName="credits" /><app-field-error
+              [control]="form.controls.credits" /></label
+          ><label class="full-width"
+            >Course title<input
+              formControlName="title"
+              placeholder="e.g. Introduction to Computer Science"
+              maxlength="120" /><app-field-error [control]="form.controls.title" /></label
+          ><label class="full-width"
+            >Instructor<input
+              formControlName="instructor"
+              placeholder="e.g. Dr. Sarah Chen"
+              maxlength="100" /><app-field-error [control]="form.controls.instructor" /></label
+          ><label class="full-width"
+            >Description <span class="optional">Optional</span
+            ><textarea
+              formControlName="description"
+              rows="4"
+              placeholder="What will students discover in this course?"
+              maxlength="1000"
+            ></textarea
+            ><app-field-error [control]="form.controls.description"
+          /></label>
+        </div>
+      </div>
+      <div class="editor-footer">
+        <span class="muted">{{
+          form.dirty ? 'You have unsaved changes' : 'Make room for something new'
+        }}</span>
+        <div>
+          <a class="button secondary" routerLink="/courses">Cancel</a
+          ><button class="button" type="submit" [disabled]="saving">
+            {{ saving ? 'Saving…' : id ? 'Save changes' : 'Create course' }}
+          </button>
+        </div>
+      </div>
+    </fieldset>
+  </form>
+}

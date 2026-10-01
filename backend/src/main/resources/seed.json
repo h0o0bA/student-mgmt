@@ -1,0 +1,118 @@
+{
+  "courses": [
+    {
+      "id": "c1",
+      "code": "CS101",
+      "title": "Introduction to Computer Science",
+      "instructor": "Dr. Sarah Chen",
+      "credits": 4,
+      "description": "Discover the ideas behind the technology we use every day. Start thinking like a problem solver."
+    },
+    {
+      "id": "c2",
+      "code": "MATH201",
+      "title": "Applied Mathematics",
+      "instructor": "Prof. James Wilson",
+      "credits": 3,
+      "description": "Bring numbers to life through real-world problems, mathematical models, and creative thinking."
+    },
+    {
+      "id": "c3",
+      "code": "ENG102",
+      "title": "Creative Writing",
+      "instructor": "Dr. Maya Thompson",
+      "credits": 3,
+      "description": "Find your voice. Explore storytelling, shape your ideas, and make every word count."
+    },
+    {
+      "id": "c4",
+      "code": "DES110",
+      "title": "Foundations of Design",
+      "instructor": "Prof. Alex Rivera",
+      "credits": 3,
+      "description": "See the world a little differently through color, composition, and human-centered design."
+    },
+    {
+      "id": "c5",
+      "code": "BIO101",
+      "title": "Life & Biological Systems",
+      "instructor": "Dr. Emily Park",
+      "credits": 4,
+      "description": "Explore the remarkable systems that connect living things, from cells to entire ecosystems."
+    },
+    {
+      "id": "c6",
+      "code": "BUS210",
+      "title": "Entrepreneurship Essentials",
+      "instructor": "Prof. Daniel Brooks",
+      "credits": 3,
+      "description": "Turn a spark of an idea into something meaningful. Learn the foundations of building a business."
+    }
+  ],
+  "students": [
+    {
+      "id": "s1",
+      "firstName": "Olivia",
+      "lastName": "Bennett",
+      "email": "olivia.bennett@example.com",
+      "status": "Active",
+      "courseIds": ["c1", "c2", "c4"]
+    },
+    {
+      "id": "s2",
+      "firstName": "Liam",
+      "lastName": "Carter",
+      "email": "liam.carter@example.com",
+      "status": "Active",
+      "courseIds": ["c1", "c6"]
+    },
+    {
+      "id": "s3",
+      "firstName": "Emma",
+      "lastName": "Davis",
+      "email": "emma.davis@example.com",
+      "status": "Active",
+      "courseIds": ["c3", "c4"]
+    },
+    {
+      "id": "s4",
+      "firstName": "Noah",
+      "lastName": "Mitchell",
+      "email": "noah.mitchell@example.com",
+      "status": "Inactive",
+      "courseIds": ["c2"]
+    },
+    {
+      "id": "s5",
+      "firstName": "Ava",
+      "lastName": "Reynolds",
+      "email": "ava.reynolds@example.com",
+      "status": "Active",
+      "courseIds": ["c3", "c5"]
+    },
+    {
+      "id": "s6",
+      "firstName": "Ethan",
+      "lastName": "Parker",
+      "email": "ethan.parker@example.com",
+      "status": "Active",
+      "courseIds": ["c1", "c2", "c6"]
+    },
+    {
+      "id": "s7",
+      "firstName": "Sophia",
+      "lastName": "Hayes",
+      "email": "sophia.hayes@example.com",
+      "status": "Active",
+      "courseIds": ["c4", "c5"]
+    },
+    {
+      "id": "s8",
+      "firstName": "Lucas",
+      "lastName": "Morgan",
+      "email": "lucas.morgan@example.com",
+      "status": "Inactive",
+      "courseIds": []
+    }
+  ]
+}

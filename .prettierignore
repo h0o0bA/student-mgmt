@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.angular/
+.tools/
+backend/
+package-lock.json
+mock/db.json
+playwright-report/
+test-results/

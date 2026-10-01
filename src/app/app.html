@@ -1,0 +1,45 @@
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar">
+  <a class="brand" routerLink="/overview"
+    ><span class="brand-mark">s<span>•</span></span
+    ><span>scholar<span class="brand-dot">.</span><small>STUDENT MANAGEMENT</small></span></a
+  >
+  <div class="workspace">
+    <span class="workspace-icon">N</span
+    ><span>Northfield Academy<small>Academic workspace</small></span>
+  </div>
+  <span class="nav-caption">WORKSPACE</span>
+  <nav aria-label="Main navigation">
+    <a routerLink="/overview" routerLinkActive="active"
+      ><span aria-hidden="true">◫</span> Overview</a
+    >
+    <a routerLink="/students" routerLinkActive="active"
+      ><span aria-hidden="true">♙</span> Students</a
+    >
+    <a routerLink="/courses" routerLinkActive="active"><span aria-hidden="true">▤</span> Courses</a>
+  </nav>
+  <div class="sidebar-note">
+    <span class="note-star">✧</span><strong>Room to grow.</strong>
+    <p>Keep students, courses, and their next steps connected.</p>
+  </div>
+  <div class="sidebar-footer">
+    <span class="avatar admin">NA</span>
+    <div>Academic office<small>Workspace administrator</small></div>
+  </div>
+</aside>
+<div class="main-shell">
+  <header class="topbar">
+    <span
+      >Workspace <span class="breadcrumb-separator">/</span>
+      <strong>Student management</strong></span
+    ><span class="term"><span></span> Academic year 2026–27</span>
+  </header>
+  <main id="main"><router-outlet /></main>
+  <footer class="page-footer">
+    A little organization. A lot of possibility.<span>Scholar · Student Management</span>
+  </footer>
+</div>
+@if (confirm.request()) {
+  <app-confirm-dialog />
+}
+<app-notice />
